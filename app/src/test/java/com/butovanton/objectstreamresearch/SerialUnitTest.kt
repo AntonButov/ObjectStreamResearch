@@ -57,4 +57,25 @@ class SerialUnitTest {
             val newExample = readObject() as HashSet<Any>
         }
     }
+
+    class MyClass(
+        val data: String,
+        @Transient
+        val transientData: String
+    ): Serializable
+
+    @Test
+    fun `transient sample`() {
+        val bufferedOutputStream = ByteArrayOutputStream()
+        ObjectOutputStream(bufferedOutputStream).apply {
+            writeObject(MyClass(data = "testData", transientData = "transientData"))
+            close()
+        }
+        ObjectInputStream(ByteArrayInputStream(bufferedOutputStream.toByteArray())).apply {
+            val newExample = readObject() as MyClass
+            assertEquals("testData", newExample.data)
+            assertEquals(null, newExample.transientData)
+            close()
+        }
+    }
 }
