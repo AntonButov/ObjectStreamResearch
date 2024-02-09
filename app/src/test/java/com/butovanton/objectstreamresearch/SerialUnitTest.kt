@@ -5,7 +5,10 @@ import org.junit.Test
 import org.junit.Assert.*
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.Externalizable
+import java.io.ObjectInput
 import java.io.ObjectInputStream
+import java.io.ObjectOutput
 import java.io.ObjectOutputStream
 import java.io.Serializable
 import java.util.HashSet
@@ -75,6 +78,44 @@ class SerialUnitTest {
             val newExample = readObject() as MyClass
             assertEquals("testData", newExample.data)
             assertEquals(null, newExample.transientData)
+            close()
+        }
+    }
+
+    data class ExternalSerializable(
+        var data: String
+    ): Externalizable {
+       // constructor() : this("")
+
+        override fun writeExternal(out: ObjectOutput) {
+            out.writeInt(data.code())
+        }
+
+        override fun readExternal(`in`: ObjectInput) {
+            data = `in`.readInt().deCode()
+        }
+
+        private fun String.code(): Int = when(this) {
+            "foo" -> 1
+            else -> throw IllegalArgumentException()
+        }
+
+        private fun Int.deCode(): String = when(this) {
+            1 -> "foo"
+            else -> throw IllegalArgumentException()
+        }
+    }
+
+    @Test
+    fun extraSerialization() {
+        val bufferedOutputStream = ByteArrayOutputStream()
+        ObjectOutputStream(bufferedOutputStream).apply {
+            writeObject(ExternalSerializable(data = "foo"))
+            close()
+        }
+        ObjectInputStream(ByteArrayInputStream(bufferedOutputStream.toByteArray())).apply {
+            val newExample = readObject() as ExternalSerializable
+            assertEquals("foo", newExample.data)
             close()
         }
     }
