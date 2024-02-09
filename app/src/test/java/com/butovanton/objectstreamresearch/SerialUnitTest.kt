@@ -83,7 +83,7 @@ class SerialUnitTest {
     }
 
     data class ExternalSerializable(
-        var data: String
+        var data: String // !
     ): Externalizable {
        // constructor() : this("")
 
