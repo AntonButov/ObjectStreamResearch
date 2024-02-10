@@ -1,8 +1,10 @@
 package com.butovanton.objectstreamresearch
 
+import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.Parcelable.Creator
+import kotlinx.parcelize.Parcelize
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,24 +27,22 @@ class ParcelableTest {
         println("dataSize = ${parcel.dataSize()}")
     }
 
-    data class MyClass(
+    data class ClassHandleParcelable(
         val data: String
     ) : Parcelable {
         override fun describeContents(): Int {
             return 0 //Parcelable.CONTENTS_FILE_DESCRIPTOR
         }
-
         override fun writeToParcel(dest: Parcel, flags: Int) {
             dest.writeString(data)
         }
-
         companion object {
-            val creator = object : Creator<MyClass> {
-                override fun createFromParcel(source: Parcel): MyClass {
-                    return MyClass(source.readString() ?: throw IllegalArgumentException())
+            @JvmField
+            val CREATOR = object : Creator<ClassHandleParcelable> {
+                override fun createFromParcel(source: Parcel): ClassHandleParcelable {
+                    return ClassHandleParcelable(source.readString() ?: throw IllegalArgumentException())
                 }
-
-                override fun newArray(size: Int): Array<MyClass> {
+                override fun newArray(size: Int): Array<ClassHandleParcelable> {
                     return newArray(size)
                 }
             }
@@ -51,11 +51,50 @@ class ParcelableTest {
 
     @Test
     fun `pass myClass throw Intent`() {
-       val parcel = Parcel.obtain()
-       MyClass("data").writeToParcel(parcel, 0)
-       parcel.setDataPosition(0)
-       val newMyClass = MyClass.creator.createFromParcel(parcel)
-       Assert.assertEquals(newMyClass.data, "data")
+        val parcel = Parcel.obtain()
+        ClassHandleParcelable("data").writeToParcel(parcel, 0)
+        parcel.setDataPosition(0)
+        val newClassHandleParcelable = ClassHandleParcelable.CREATOR.createFromParcel(parcel)
+        Assert.assertEquals(newClassHandleParcelable.data, "data")
+    }
+
+    @Test
+    fun `my class throw bundle`() {
+        val parcel = Parcel.obtain()
+        val classHandleParcelable = ClassHandleParcelable("data")
+        val bundle = Bundle().also { it.putParcelable("key", classHandleParcelable) }
+        parcel.writeBundle(bundle)
+        parcel.setDataPosition(0)
+        val newBundle = parcel.readBundle()
+        val newClassHandleParcelable = newBundle?.getParcelable("key", ClassHandleParcelable::class.java)!!
+        assert(newClassHandleParcelable.data == "data")
+    }
+
+    @Parcelize
+    data class ParcelFromPlugin(
+        val data: String
+    ) : Parcelable
+
+    @Test
+    fun `test plugin`() {
+        val parcel = Parcel.obtain()
+        ParcelFromPlugin(data = "data").writeToParcel(parcel, 0)
+        assert(parcel.dataPosition() > 0)
+    }
+
+    @Test
+    fun `save and read bundle to parcel`() {
+        val parcel = Parcel.obtain()
+        val oldParcelFromPlugin = ParcelFromPlugin("data")
+        val bundle = Bundle().also {
+            it.putParcelable("key", oldParcelFromPlugin)
+        }
+        parcel.writeBundle(bundle)
+        parcel.setDataPosition(0)
+        val newBundle = parcel.readBundle()
+        val newParcelFromPlugin = newBundle?.getParcelable("key", ParcelFromPlugin::class.java)
+            ?: throw IllegalArgumentException()
+        assert(newParcelFromPlugin.data == "data")
     }
 }
 
