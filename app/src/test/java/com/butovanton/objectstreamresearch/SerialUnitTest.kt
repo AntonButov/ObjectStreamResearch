@@ -85,7 +85,7 @@ class SerialUnitTest {
     data class ExternalSerializable(
         var data: String // !
     ): Externalizable {
-       // constructor() : this("")
+        constructor() : this("")
 
         override fun writeExternal(out: ObjectOutput) {
             out.writeInt(data.code())
