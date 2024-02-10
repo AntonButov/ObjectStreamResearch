@@ -1,5 +1,6 @@
 package com.butovanton.objectstreamresearch
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
@@ -33,15 +34,20 @@ class ParcelableTest {
         override fun describeContents(): Int {
             return 0 //Parcelable.CONTENTS_FILE_DESCRIPTOR
         }
+
         override fun writeToParcel(dest: Parcel, flags: Int) {
             dest.writeString(data)
         }
+
         companion object {
             @JvmField
             val CREATOR = object : Creator<ClassHandleParcelable> {
                 override fun createFromParcel(source: Parcel): ClassHandleParcelable {
-                    return ClassHandleParcelable(source.readString() ?: throw IllegalArgumentException())
+                    return ClassHandleParcelable(
+                        source.readString() ?: throw IllegalArgumentException()
+                    )
                 }
+
                 override fun newArray(size: Int): Array<ClassHandleParcelable> {
                     return newArray(size)
                 }
@@ -50,7 +56,7 @@ class ParcelableTest {
     }
 
     @Test
-    fun `pass myClass throw Intent`() {
+    fun `pass myClass through parcel`() {
         val parcel = Parcel.obtain()
         ClassHandleParcelable("data").writeToParcel(parcel, 0)
         parcel.setDataPosition(0)
@@ -59,14 +65,15 @@ class ParcelableTest {
     }
 
     @Test
-    fun `my class throw bundle`() {
+    fun `pass my class throw bundle`() {
         val parcel = Parcel.obtain()
         val classHandleParcelable = ClassHandleParcelable("data")
         val bundle = Bundle().also { it.putParcelable("key", classHandleParcelable) }
         parcel.writeBundle(bundle)
         parcel.setDataPosition(0)
         val newBundle = parcel.readBundle()
-        val newClassHandleParcelable = newBundle?.getParcelable("key", ClassHandleParcelable::class.java)!!
+        val newClassHandleParcelable =
+            newBundle?.getParcelable("key", ClassHandleParcelable::class.java)!!
         assert(newClassHandleParcelable.data == "data")
     }
 
