@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ObjectStreamResearch</string>
+    <string name="title_activity_my">MyActivity</string>
 </resources>
